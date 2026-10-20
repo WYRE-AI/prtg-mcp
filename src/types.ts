@@ -1,9 +1,9 @@
 /**
  * PRTG authenticates with a static Bearer API key, generated in the PRTG
  * web UI (Account Settings -> My Account -> API Keys). Unlike most
- * connectors in this fleet, PRTG has no fixed hosted API endpoint - every
- * PRTG instance (on-premises PRTG Network Monitor, or a customer's own
- * PRTG Hosted Monitor tenant) is self-hosted at its own base URL, so a
+ * connectors in this fleet, PRTG has no fixed hosted API endpoint - the
+ * connector targets self-hosted PRTG Network Monitor at its own base URL
+ * (PRTG Hosted Monitor does not provide API v2 yet), so a
  * base URL is a required part of the credential, not an optional
  * self-hosted override. See README's Authentication section.
  */

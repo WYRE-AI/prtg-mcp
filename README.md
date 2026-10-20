@@ -4,7 +4,7 @@ MCP server for [Paessler PRTG](https://www.paessler.com/prtg)'s REST API v2 - de
 
 ## Authentication
 
-PRTG authenticates with a static **Bearer API key**, generated in the PRTG web UI under **Account Settings -> My Account -> API Keys**. No admin approval is required to generate one - any PRTG user can create a key for themselves. Unlike most connectors in this fleet, PRTG has no fixed hosted API endpoint: every PRTG instance (on-premises PRTG Network Monitor, or a customer's own PRTG Hosted Monitor tenant) is self-hosted at its own base URL, so this connector requires **both** an API key and a base URL. The key is sent as `Authorization: Bearer <key>` to `<base URL>/api/v2/...`. In gateway mode both arrive per-request via the `X-PRTG-Api-Key` and `X-PRTG-Base-URL` headers; in local/stdio mode they're read once from `PRTG_API_KEY` and `PRTG_BASE_URL`.
+PRTG authenticates with a static **Bearer API key**, generated in the PRTG web UI under **Account Settings -> My Account -> API Keys**. No admin approval is required to generate one - any PRTG user can create a key for themselves. Unlike most connectors in this fleet, PRTG has no fixed hosted API endpoint: this connector supports self-hosted PRTG Network Monitor at its own base URL (PRTG Hosted Monitor does not provide API v2 yet; see below), so it requires **both** an API key and a base URL. The key is sent as `Authorization: Bearer <key>` to `<base URL>/api/v2/...`. In gateway mode both arrive per-request via the `X-PRTG-Api-Key` and `X-PRTG-Base-URL` headers; in local/stdio mode they're read once from `PRTG_API_KEY` and `PRTG_BASE_URL`.
 
 ### Credential scope
 
