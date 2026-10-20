@@ -26,7 +26,7 @@
         },
         {
           "name": "PRTG_BASE_URL",
-          "description": "Base URL of the PRTG core server this connector talks to, e.g. https://prtg.example.com. Every PRTG instance is self-hosted; there is no shared hosted endpoint.",
+          "description": "Base URL of the PRTG Application Server for self-hosted PRTG Network Monitor (which serves API v2; HTTPS port 1616 by default), e.g. https://prtg.example.com:1616. Not the classic web interface URL. PRTG Hosted Monitor does not provide API v2.",
           "isRequired": true,
           "isSecret": false,
           "format": "string"

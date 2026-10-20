@@ -4,11 +4,17 @@ MCP server for [Paessler PRTG](https://www.paessler.com/prtg)'s REST API v2 - de
 
 ## Authentication
 
-PRTG authenticates with a static **Bearer API key**, generated in the PRTG web UI under **Account Settings -> My Account -> API Keys**. No admin approval is required to generate one - any PRTG user can create a key for themselves. Unlike most connectors in this fleet, PRTG has no fixed hosted API endpoint: every PRTG instance (on-premises PRTG Network Monitor, or a customer's own PRTG Hosted Monitor tenant) is self-hosted at its own base URL, so this connector requires **both** an API key and a base URL. The key is sent as `Authorization: Bearer <key>` to `<base URL>/api/v2/...`. In gateway mode both arrive per-request via the `X-PRTG-Api-Key` and `X-PRTG-Base-URL` headers; in local/stdio mode they're read once from `PRTG_API_KEY` and `PRTG_BASE_URL`.
+PRTG authenticates with a static **Bearer API key**, generated in the PRTG web UI under **Account Settings -> My Account -> API Keys**. No admin approval is required to generate one - any PRTG user can create a key for themselves. Unlike most connectors in this fleet, PRTG has no fixed hosted API endpoint: this connector supports self-hosted PRTG Network Monitor at its own base URL (PRTG Hosted Monitor does not provide API v2 yet; see below), so it requires **both** an API key and a base URL. The key is sent as `Authorization: Bearer <key>` to `<base URL>/api/v2/...`. In gateway mode both arrive per-request via the `X-PRTG-Api-Key` and `X-PRTG-Base-URL` headers; in local/stdio mode they're read once from `PRTG_API_KEY` and `PRTG_BASE_URL`.
 
 ### Credential scope
 
 **Vendor-documented, not independently verified against a live account** (see Verification below for why): per Paessler's own PRTG API v2 documentation, an API key inherits the full permissions of the PRTG user account that created it - keys cannot be independently scoped to read-only. Paessler's own guidance for AI-assistant integrations is explicit: *"grant [API keys used in AI assistants] the lowest user role that fits the assistant's task,"* and recommends creating a **dedicated read-only PRTG user account** first, then generating the API key under that account, rather than relying on the key itself to restrict access. This connector cannot enforce that on PRTG's side - it only implements the read-only tool surface described below - so the actual read-only guarantee depends on the customer following Paessler's own recommendation when they generate the key.
+
+### Base URL (on-premises)
+
+On PRTG Network Monitor (on-premises), API v2 is served only by the **PRTG Application Server**, not by the classic web interface. Use the Application Server's HTTPS URL, by default port **1616** - e.g. `https://prtg.example.com:1616`. The Application Server also listens for plain HTTP on port 1615, but every request carries the bearer API key, so use `http://...:1615` only on a trusted network. The classic web interface URL (port 80/443) does not serve `/api/v2` and typically returns 404, a redirect, or the HTML login page, which looks like an authentication failure.
+
+The Application Server exists only after **New UI and API v2** has been activated: in the classic UI go to **Setup | Overview** and select **Activate** (ports 1616/1615 and 23580 must be free; the core server restarts). Per Paessler, it is activated by default for new PRTG users as of PRTG 25.2.106. Existing installs, upgrades, and any install where **Setup | Overview** still shows **Activate New UI And API v2** must activate it manually. Paessler also states that API v2 is not yet available on PRTG Hosted Monitor or on PRTG installs running in cluster mode. See Paessler's [I want to use the new UI and API v2. What do I need to know?](https://helpdesk.paessler.com/en/support/solutions/articles/76000063881) and the [New User Interface manual page](https://www.paessler.com/manuals/prtg/new_user_interface).
 
 ### Verification
 
@@ -19,7 +25,7 @@ This connector was built directly against PRTG's official, current OpenAPI v2 sp
 | Env var | Description |
 |---|---|
 | `PRTG_API_KEY` | Bearer API key issued by the PRTG web UI. |
-| `PRTG_BASE_URL` | Base URL of the PRTG core server, e.g. `https://prtg.example.com`. |
+| `PRTG_BASE_URL` | Base URL of the **PRTG Application Server** (which serves API v2), e.g. `https://prtg.example.com:1616`. Not the classic web interface URL - see *Base URL (on-premises)* above. |
 | `MCP_TRANSPORT` | `stdio` (default) or `http`. |
 | `AUTH_MODE` | `env` (default, reads the vars above) or `gateway` (credentials arrive per-request via the `X-PRTG-Api-Key` / `X-PRTG-Base-URL` headers, injected by the Conduit gateway). |
 | `CONDUIT_S2S_SECRET` | When set, the HTTP transport requires a valid `X-Gateway-S2S` header (Conduit sidecar auth) on every `/mcp` request. |
@@ -89,5 +95,5 @@ npm run lint   # tsc --noEmit
 
 ```bash
 docker build -t prtg-mcp .
-docker run -p 8080:8080 -e PRTG_API_KEY=... -e PRTG_BASE_URL=https://prtg.example.com prtg-mcp
+docker run -p 8080:8080 -e PRTG_API_KEY=... -e PRTG_BASE_URL=https://prtg.example.com:1616 prtg-mcp
 ```
