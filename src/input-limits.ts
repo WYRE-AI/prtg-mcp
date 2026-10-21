@@ -10,7 +10,10 @@
  * Dependency-free on purpose: copy verbatim to other fleet repos.
  */
 
+/** Maximum HTTP request body size, in bytes. Bodies larger than this value are rejected. */
 export const MAX_REQUEST_BODY_BYTES = 256 * 1024;
+
+/** Maximum allowed number of tool-input array elements and object keys. */
 export const MAX_TOOL_INPUT_ELEMENTS = 10_000;
 
 /**
@@ -38,16 +41,21 @@ export function countToolInputElements(value: unknown, max: number): number {
   return count;
 }
 
+/** Return whether the tool input element count exceeds the supplied maximum. */
 export function toolInputTooLarge(args: unknown, max = MAX_TOOL_INPUT_ELEMENTS): boolean {
   return countToolInputElements(args, max) > max;
 }
 
-export function toolInputTooLargeResult(toolName: string, max = MAX_TOOL_INPUT_ELEMENTS) {
+/**
+ * Create an MCP error result for oversized tool input. The message is fixed
+ * and never echoes caller-controlled input such as the tool name (CWE-209).
+ */
+export function toolInputTooLargeResult(max = MAX_TOOL_INPUT_ELEMENTS) {
   return {
     content: [
       {
         type: 'text' as const,
-        text: `Invalid arguments for tool ${toolName}: arguments contain more than the maximum of ${max} elements`,
+        text: `Tool input exceeds the maximum of ${max} elements`,
       },
     ],
     isError: true,

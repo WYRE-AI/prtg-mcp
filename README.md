@@ -33,7 +33,7 @@ This connector was built directly against PRTG's official, current OpenAPI v2 sp
 
 ## Request limits
 
-- HTTP request bodies are capped at 256 KiB (262144 bytes). After the `X-Gateway-S2S` check passes, a `Content-Length` above the cap returns 413 with a JSON-RPC error; bodies without `Content-Length` are capped by the MCP SDK transport. Unauthenticated requests still get 401 first.
+- HTTP request bodies are capped at 256 KiB (262144 bytes). After the `X-Gateway-S2S` check passes, a `Content-Length` above the cap returns 413 with a JSON-RPC error; bodies without `Content-Length` (e.g. chunked) are capped by the MCP SDK transport, which also returns 413. Oversized tool input returns the fixed error `Tool input exceeds the maximum of 10000 elements`. Unauthenticated requests still get 401 first.
 - `tools/call` arguments are capped at 10,000 elements (every array item and object key at any depth). Larger inputs return an `isError` tool result and are never dispatched.
 
 These limits address CVE-2026-111768 / GHSA-46jr-4wx8-v453 (memory exhaustion during validation) and GHSA-f897-62hf-6gxq (no request body / batch cap).

@@ -47,10 +47,8 @@ describe('countToolInputElements', () => {
   });
 
   it('builds the McpServer-compatible error result', () => {
-    expect(toolInputTooLargeResult('t')).toEqual({
-      content: [
-        { type: 'text', text: 'Invalid arguments for tool t: arguments contain more than the maximum of 10000 elements' },
-      ],
+    expect(toolInputTooLargeResult()).toEqual({
+      content: [{ type: 'text', text: 'Tool input exceeds the maximum of 10000 elements' }],
       isError: true,
     });
   });
@@ -135,6 +133,34 @@ describe('HTTP request limits', () => {
     expect(invalid.status).toBe(401);
   });
 
+  it('returns 413 for a chunked body over the cap with valid S2S', async () => {
+    const port = await listen();
+    const status = await new Promise<number>((resolve, reject) => {
+      const req = httpRequest(
+        {
+          hostname: '127.0.0.1',
+          port,
+          method: 'POST',
+          path: '/mcp',
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json, text/event-stream',
+            'transfer-encoding': 'chunked',
+            'x-gateway-s2s': s2s(),
+          },
+        },
+        (r) => {
+          r.resume();
+          r.on('end', () => resolve(r.statusCode ?? 0));
+        },
+      );
+      req.setTimeout(5000, () => req.destroy(new Error('timeout')));
+      req.on('error', reject);
+      req.end(OVERSIZED);
+    });
+    expect(status).toBe(413);
+  });
+
   it('serves a normal initialize and tools/list', async () => {
     const port = await listen();
     const init = await post(
@@ -170,6 +196,7 @@ describe('HTTP request limits', () => {
     const result = JSON.parse(res.body).result;
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('maximum of 10000 elements');
+    expect(result.content[0].text).not.toContain('prtg_list_groups');
     expect(dispatch).not.toHaveBeenCalled();
   });
 });
